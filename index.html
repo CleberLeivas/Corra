@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timer de Corrida</title>
+    <style>
+        body {
+            padding-top: 1%;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 70px;
+            background-color: rgb(125, 148, 124);
+        }
+
+        #timer {
+            width: auto;
+            font-size: 7em;
+            margin: 20px 0;
+            border-radius: 10px;
+            background-color: #9dc411;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: background-color 0.5s ease;
+        }
+
+        input {
+            text-align: center;
+            width: 100px;
+            font-size: 1.2em;
+            padding: 5px;
+            margin: 5px auto;
+            display: block;
+        }
+
+        button {
+            display: flex;
+            justify-content: center;
+            font-size: 3em;
+            padding: 5px;
+            margin: 5px;
+            cursor: pointer;
+            align-items: center;
+            width: 160px;
+            border-radius: 10px;
+            background-color: #187bb4;
+            color: white;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #0d4a73;
+        }
+
+        #center {
+            padding-top: 20px;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        #modo-selecao {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #e0e0e0;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        #modo-selecao label {
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #187bb4;
+        }
+
+        #modo-selecao select {
+            font-size: 1.2em;
+            padding: 8px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            width: 80%;
+            margin-top: 5px;
+        }
+
+        #modo-selecao select:focus {
+            outline: none;
+            border-color: #66afe9;
+            box-shadow: 0 0 5px rgba(102, 175, 233, 0.5);
+        }
+
+        #mensagem-orientacao {
+            font-size: 1.5em;
+            color: #000000;
+            border-radius: 10px;
+            background-color: #9dc411;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: background-color 0.5s ease;
+            margin-top: 20px;
+        }
+
+        #mensagem-erro {
+            font-size: 1.5em;
+            color: #000000;
+            border-radius: 10px;
+            background-color: red;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: background-color 0.5s ease;
+            margin-top: 20px;
+        }
+
+        #posicao {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            padding: 10px;
+            background-color: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(5px);
+            box-sizing: border-box;
+        }
+
+        #posicao > div {
+            margin: 0 10px;
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <h1>Time de Corrida e Caminhada</h1>
+        <h3>SOMOS MAIS QUE VENCEDORES</h3>
+    </div>
+    <div id="modo-selecao">
+        <label for="modo">Selecione o Modo de Treino:</label>
+        <select id="modo">
+            <option value="fixo">Tempo Fixo</option>
+            <option value="progressivo">Progressivo</option>
+        </select>
+    </div>
+    <div id="center">
+        <label>Tempo de Caminhada: <input type="text" id="walkTime" value="" placeholder="00,00"></label>
+        <label>Tempo de Corrida: <input type="text" id="runTime" value="" placeholder="00,00"></label>
+    </div>
+    <div id="timer">00:00</div>
+    <div id="mensagem-orientacao"></div>
+    <div id="mensagem-erro"></div>
+    <div id="posicao">
+        <div>
+            <button onclick="resetTimer()">Reset</button>
+        </div>
+        <div>
+            <button onclick="startStop()">Iniciar</button>
+        </div>
+    </div>
+    <audio id="alarm" src="https://www.fesliyanstudios.com/play-mp3/4386"></audio>
+
+    <script>
+        let timer;
+        let running = false;
+        let seconds = 0;
+        let isRunningPhase = false;
+        let runDuration;
+        let walkDuration;
+        let initialRunDuration;
+        let initialWalkDuration;
+        let alarm = document.getElementById('alarm');
+        let alarmTimeout;
+        let modoTreino = 'fixo';
+
+        const timerElement = document.getElementById('timer');
+        const mensagemOrientacao = document.getElementById('mensagem-orientacao');
+        const mensagemErro = document.getElementById('mensagem-erro');
+
+        function parseTime(input) {
+            let parts = input.split(',');
+            let minutes = parseInt(parts[0]) || 0;
+            let seconds = parseInt(parts[1]) || 0;
+            return minutes * 60 + seconds;
+        }
+
+        document.getElementById('modo').addEventListener('change', function() {
+            modoTreino = this.value;
+        });
+
+        function startStop() {
+            mensagemErro.innerText = '';
+
+            const runTimeValue = document.getElementById('runTime').value;
+            const walkTimeValue = document.getElementById('walkTime').value;
+
+            if (!runTimeValue || !walkTimeValue) {
+                mensagemErro.innerText = "Por favor, preencha os tempos, use o formato MM,SS.";
+                return;
+            }
+
+            if (isNaN(parseTime(runTimeValue)) || isNaN(parseTime(walkTimeValue))) {
+                mensagemErro.innerText = "Por favor, use o formato MM,SS.";
+                return;
+            }
+
+            if (running) {
+                clearInterval(timer);
+                mensagemOrientacao.innerText = '';
+                running = false;
+            } else {
+                initialRunDuration = parseTime(runTimeValue);
+                initialWalkDuration = parseTime(walkTimeValue);
+
+                runDuration = initialRunDuration;
+                walkDuration = initialWalkDuration;
+
+                seconds = walkDuration;
+                updateTimerDisplay();
+                timer = setInterval(updateTimer, 1000);
+                running = true;
+            }
+        }
+
+        function updateTimer() {
+            seconds--;
+            updateTimerDisplay();
+
+            if (seconds <= 0) {
+                playAlarm();
+
+                isRunningPhase = !isRunningPhase;
+
+                if (modoTreino === 'progressivo' && !isRunningPhase) {
+                    runDuration += 60;
+                    document.getElementById('runTime').value = `${Math.floor(runDuration / 60)},${runDuration % 60 < 10 ? '0' : ''}${runDuration % 60}`;
+                }
+
+                seconds = isRunningPhase ? runDuration : walkDuration;
+            }
+        }
+
+        function updateTimerDisplay() {
+            let mins = String(Math.floor(seconds / 60)).padStart(2, '0');
+            let secs = String(seconds % 60).padStart(2, '0');
+            document.getElementById('timer').innerText = `${mins}:${secs}`;
+
+            if (seconds <= 5) {
+                timerElement.style.backgroundColor = 'red';
+                mensagemOrientacao.innerText = isRunningPhase ? "Falta pouco, não desista!" : "Prepare-se para CORRER!";
+            } else {
+                timerElement.style.backgroundColor = '#9dc411';
+                mensagemOrientacao.innerText = '';
+            }
+        }
+
+        function playAlarm() {
+            alarm.currentTime = 0;
+            alarm.play().catch(() => console.log("Erro ao tocar som."));
+
+            alarmTimeout = setTimeout(() => {
+                alarm.pause();
+                alarm.currentTime = 0;
+            }, 5000);
+        }
+
+        function resetTimer() {
+            clearInterval(timer);
+            clearTimeout(alarmTimeout);
+            running = false;
+            seconds = 0;
+            timerElement.style.backgroundColor = '#9dc411';
+            mensagemOrientacao.innerText = '';
+            mensagemErro.innerText = '';
+            document.getElementById('timer').innerText = "00:00";
+            alarm.pause();
+            alarm.currentTime = 0;
+        }
+    </script>
+</body>
+</html>
