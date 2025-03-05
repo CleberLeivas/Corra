@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,7 +13,7 @@
         }
 
         body {
-            padding-top: 5%;
+            margin-top: 30px;
             font-family: Arial, sans-serif;
             text-align: center;
             background-color: #567e30;
@@ -127,11 +128,12 @@
             box-sizing: border-box;
         }
 
-        #botoes > div {
+        #botoes>div {
             margin: 0 10px;
         }
     </style>
 </head>
+
 <body>
     <div id="modo-selecao">
         <h3>Time de Caminhada e Corrida</h3>
@@ -144,14 +146,24 @@
         </select>
     </div>
     <div id="modo-selecao">
+        <label>
+            <input type="checkbox" id="vibracaoCheck">
+            Ativar Vibração
+        </label>
+    </div>
+    <div id="modo-selecao">
         <div id="incremento-container" style="display: none;">
-            <label>Incremento (segundos): <input type="number" id="runIncrement" value="60" placeholder="Segundos"></label>
+            <label for="runIncrement">Incremento (segundos):
+                <input type="number" id="runIncrement" value="60" placeholder="Segundos"></label>
         </div>
-        <label>Tempo de Caminhada: <input type="text" id="walkTime" value="" placeholder="MM,SS"></label>
-        <label>Tempo de Corrida: <input type="text" id="runTime" value="" placeholder="MM,SS"></label>
+        <label for="walkTime">Tempo de Caminhada:
+            <input type="text" id="walkTime" value="" placeholder="MM,SS"></label>
+        <label for="runTime">Tempo de Corrida:
+            <input type="text" id="runTime" value="" placeholder="MM,SS"></label>
     </div>
     <div id="timer">00:00</div>
     <div id="mensagem-orientacao-erro"></div>
+    <div id="mensagem-erro"></div>
 
     <div id="botoes">
         <div>
@@ -161,7 +173,7 @@
             <button onclick="startStop()">Iniciar</button>
         </div>
     </div>
-    <audio id="alarm" src="https://www.fesliyanstudios.com/play-mp3/4386"></audio>
+
     <script>
         let timer;
         let running = false;
@@ -176,15 +188,17 @@
         let modoTreino = 'fixo';
         const timerElement = document.getElementById('timer');
         const mensagemOrientacao = document.getElementById('mensagem-orientacao-erro');
-        const mensagemErro = document.getElementById('mensagem-orientacao-erro');
+        const mensagemErro = document.getElementById('mensagem-erro');
         const incrementoContainer = document.querySelector('#modo-selecao > div');
+
         function parseTime(input) {
             let parts = input.split(',');
             let minutes = parseInt(parts[0]) || 0;
             let seconds = parseInt(parts[1]) || 0;
             return minutes * 60 + seconds;
         }
-        document.getElementById('modo').addEventListener('change', function() {
+
+        document.getElementById('modo').addEventListener('change', function () {
             modoTreino = this.value;
             if (modoTreino === 'progressivo') {
                 incrementoContainer.style.display = 'block';
@@ -192,18 +206,22 @@
                 incrementoContainer.style.display = 'none';
             }
         });
+
         function startStop() {
             mensagemErro.innerText = '';
             const runTimeValue = document.getElementById('runTime').value;
             const walkTimeValue = document.getElementById('walkTime').value;
+
             if (!runTimeValue || !walkTimeValue) {
                 mensagemErro.innerText = "Por favor, preencha os tempos, use o formato MM,SS.";
                 return;
             }
+
             if (isNaN(parseTime(runTimeValue)) || isNaN(parseTime(walkTimeValue))) {
                 mensagemErro.innerText = "Por favor, use o formato MM,SS.";
                 return;
             }
+
             if (running) {
                 clearInterval(timer);
                 mensagemOrientacao.innerText = '';
@@ -219,24 +237,30 @@
                 running = true;
             }
         }
+
         function updateTimer() {
             seconds--;
             updateTimerDisplay();
+
             if (seconds <= 0) {
                 playAlarm();
                 isRunningPhase = !isRunningPhase;
+
                 if (modoTreino === 'progressivo' && !isRunningPhase) {
                     const runIncrement = parseInt(document.getElementById('runIncrement').value) || 60;
                     runDuration += runIncrement;
                     document.getElementById('runTime').value = `${Math.floor(runDuration / 60)},${runDuration % 60 < 10 ? '0' : ''}${runDuration % 60}`;
                 }
+
                 seconds = isRunningPhase ? runDuration : walkDuration;
             }
         }
+
         function updateTimerDisplay() {
             let mins = String(Math.floor(seconds / 60)).padStart(2, '0');
             let secs = String(seconds % 60).padStart(2, '0');
             document.getElementById('timer').innerText = `${mins}:${secs}`;
+
             if (seconds <= 5) {
                 timerElement.style.backgroundColor = 'red';
                 mensagemOrientacao.innerText = isRunningPhase ? "Falta pouco, NÃO DESISTA!" : "Prepare-se para CORRER!";
@@ -245,14 +269,50 @@
                 mensagemOrientacao.innerText = '';
             }
         }
+
         function playAlarm() {
-            alarm.currentTime = 0;
-            alarm.play().catch(() => console.log("Erro ao tocar som."));
-            alarmTimeout = setTimeout(() => {
-                alarm.pause();
-                alarm.currentTime = 0;
-            }, 3000);
+            const vibracaoAtivada = document.getElementById("vibracaoCheck").checked;
+
+            if (vibracaoAtivada && "vibrate" in navigator) {
+                vibrarDispositivo();
+            } else {
+                tocarBeep();
+            }
         }
+
+        function tocarBeep() {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+
+                oscillator.type = "sine";
+                oscillator.frequency.setValueAtTime(2000, audioCtx.currentTime);
+                gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                oscillator.start();
+
+                setTimeout(() => {
+                    oscillator.stop();
+                    audioCtx.close();
+                }, 1500);
+            } catch (error) {
+                console.error("Erro ao tocar o beep:", error);
+                mensagemErro.innerText = "Erro ao tocar o alarme. Verifique as configurações do seu navegador.";
+            }
+        }
+
+        function vibrarDispositivo() {
+            try {
+                navigator.vibrate([500, 300, 500]);
+            } catch (error) {
+                console.error("Erro ao vibrar o dispositivo:", error);
+                mensagemErro.innerText = "Erro ao vibrar o dispositivo. Verifique se seu navegador suporta vibração.";
+            }
+        }
+
         function resetTimer() {
             clearInterval(timer);
             clearTimeout(alarmTimeout);
