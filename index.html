@@ -6,6 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Timer de Corrida</title>
 
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link href="https://cdn.jsdelivr.net/gh/gitbrent/bootstrap4-toggle@3.6.1/css/bootstrap4-toggle.min.css"
+        rel="stylesheet">
+
     <style>
         * {
             margin: 0;
@@ -25,7 +29,7 @@
 
         #timer {
             width: auto;
-            font-size: 5em;
+            font-size: 3em;
             margin: 5px;
             border-radius: 10px;
             background-color: #9dc411;
@@ -74,8 +78,7 @@
 
         #modo-selecao label {
             font-size: 1em;
-            font-weight: bold;
-            color: #187bb4;
+            color: #063b5a;
         }
 
         #modo-selecao select {
@@ -83,7 +86,7 @@
             padding: 5px;
             border-radius: 5px;
             border: 1px solid #ccc;
-            width: 80%;
+            width: 50%;
             margin-top: 5px;
         }
 
@@ -138,29 +141,36 @@
     <div id="modo-selecao">
         <h3>Time de Caminhada e Corrida</h3>
     </div>
+
     <div id="modo-selecao">
         <label for="modo">Selecione o Modo de Treino:</label>
         <select id="modo">
             <option value="fixo">Tempo Fixo</option>
             <option value="progressivo">Progressivo</option>
         </select>
-    </div>
-    <div id="modo-selecao">
+
         <label>
-            <input type="checkbox" id="vibracaoCheck">
-            Ativar Vibração
+            Ativar Vibração:
+            <input type="checkbox" id="vibracaoCheck" data-toggle="toggle" data-onstyle="warning" data-off="Bip"
+                data-size="sm">
         </label>
     </div>
+
     <div id="modo-selecao">
         <div id="incremento-container" style="display: none;">
             <label for="runIncrement">Incremento (segundos):
-                <input type="number" id="runIncrement" value="60" placeholder="Segundos"></label>
+            <input type="number" id="runIncrement" value="60" placeholder="Segundos"></label>
         </div>
-        <label for="walkTime">Tempo de Caminhada:
-            <input type="text" id="walkTime" value="" placeholder="MM,SS"></label>
-        <label for="runTime">Tempo de Corrida:
-            <input type="text" id="runTime" value="" placeholder="MM,SS"></label>
+        <div>
+            <label for="walkTime">Tempo de Caminhada:
+            <input type="text" id="walkTime" value="" placeholder="mm,ss"></label>
+        </div>
+        <div>
+            <label for="runTime">Tempo de Corrida:
+            <input type="text" id="runTime" value="" placeholder="mm,ss"></label>
+        </div>
     </div>
+
     <div id="timer">00:00</div>
     <div id="mensagem-orientacao-erro"></div>
     <div id="mensagem-erro"></div>
@@ -173,6 +183,11 @@
             <button onclick="startStop()">Iniciar</button>
         </div>
     </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/gitbrent/bootstrap4-toggle@3.6.1/js/bootstrap4-toggle.min.js"></script>
 
     <script>
         let timer;
